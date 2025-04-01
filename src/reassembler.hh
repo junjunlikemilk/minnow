@@ -1,12 +1,30 @@
 #pragma once
 
+#include <utility>
+#include <vector>
 #include "byte_stream.hh"
+
+struct reassembler_item
+{
+  std::string data;
+  uint64_t first_index;
+  uint64_t last_index; // 左开右闭
+  bool is_last;
+
+  bool operator<( const reassembler_item& x ) const { return first_index < x.first_index; }
+
+  reassembler_item( std::string data1, uint64_t first_index1, uint64_t last_index1, bool is_last1 )
+    : data( std::move( data1 ) ), first_index( first_index1 ), last_index( last_index1 ), is_last( is_last1 )
+  {}
+};
 
 class Reassembler
 {
 public:
   // Construct Reassembler to write into given ByteStream.
-  explicit Reassembler( ByteStream&& output ) : output_( std::move( output ) ) {}
+  explicit Reassembler( ByteStream&& output )
+    : output_( std::move( output ) ), buffer_(), pending_size_( 0 ), current_index_( 0 )
+  {}
 
   /*
    * Insert a new substring to be reassembled into a ByteStream.
@@ -31,7 +49,6 @@ public:
   void insert( uint64_t first_index, std::string data, bool is_last_substring );
 
   // How many bytes are stored in the Reassembler itself?
-  // This function is for testing only; don't add extra state to support it.
   uint64_t count_bytes_pending() const;
 
   // Access output stream reader
@@ -42,5 +59,8 @@ public:
   const Writer& writer() const { return output_.writer(); }
 
 private:
-  ByteStream output_;
+  ByteStream output_; // the Reassembler writes to this ByteStream
+  std::vector<reassembler_item> buffer_;
+  uint64_t pending_size_;
+  uint64_t current_index_;
 };
