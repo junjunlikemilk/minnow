@@ -1,7 +1,7 @@
 #pragma once
 
 #include "byte_stream.hh"
-
+#include <list>
 class Reassembler
 {
 public:
@@ -42,5 +42,12 @@ public:
   const Writer& writer() const { return output_.writer(); }
 
 private:
+  void push_bytes(size_t fisrt_index,std::string data,bool is_last_substring);
+  void cache_bytes(size_t fisrt_index,std::string data,bool is_last_substring);
+
+  void flush_buffer();
   ByteStream output_;
+  size_t pending_size_{};
+  size_t expected_index_{};
+  std::list<std::tuple<size_t,std::string,bool>> buffer_{};
 };
